@@ -1,12 +1,12 @@
 package main
 
 import (
-	"bufio"
+    "bufio"
     "fmt"
     "log"
-	"net"
-	"os"
-	"strings"
+    "net"
+    "os"
+    "strings"
     "time"
 )
 

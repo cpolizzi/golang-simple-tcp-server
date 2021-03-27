@@ -1,0 +1,24 @@
+:icon: fonts
+:toc:
+
+= Simple TCP Server
+
+Starts a text based TCP server on a designated port on all interfaces and provides the following:
+
+* Every conection is serviced on a dedicated thread.
+* Periodically sends a message to a client and expects the client provide a response, see xref:unsolicited-requests[]
+  for more information.
+* Accepts client requests in the form of `KEY:VALUE`, see xref:recognized-requests[] for more information.
+* Client requests are provided with a response of the form `KEY:VALUE`.
+
+== Recognized Requests
+
+* `0820` will result in a response `0830:time=DATETIME` where `DATETIME` will be the date time stamp of the server.
+
+== Unsolicited Requests
+
+This is the server sending a request to a client. The client is expected to provide a response.
+
+Every 5 seconds the server will send a message:
+
+* `0120:timee=TIMESTAMP` where `TIMESTAMP` will be the current date, time and time zone of the server.
