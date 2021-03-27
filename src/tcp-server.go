@@ -7,7 +7,29 @@ import (
 	"net"
 	"os"
 	"strings"
+    "time"
 )
+
+func createRequest(mti string) string {
+    request := ""
+
+    switch mti {
+    case "0120":
+        request = fmt.Sprintf("time=%s", time.Now().Format(time.RFC3339))
+    }
+
+    return request
+}
+
+func sendRequest(c net.Conn, mti string) {
+    connectionId := c.RemoteAddr().String()
+
+    payload := createRequest(mti)
+    request := fmt.Sprintf("%s:%s\n", mti, payload)
+
+    log.Printf("SEND[%s] length=%d, request=%s", connectionId, len(request), request)
+    c.Write([]byte(string(request)))
+}
 
 func handleMTI820(payload string) string {
     return "0830:OK"
@@ -45,10 +67,26 @@ func handleRequest(req string) string {
 func handleConnection(c net.Conn) {
     connectionId := c.RemoteAddr().String()
     log.Printf("ACCEPT[%s]\n", connectionId)
+
+    ticker := time.NewTicker(5000 * time.Millisecond)
+    done := make(chan bool)
+    go func() {
+        for {
+            select {
+                case <-done:
+                    return
+                case <-ticker.C:
+                    sendRequest(c, "0120")
+            }
+        }
+    }()
+
 	for {
         netData, err := bufio.NewReader(c).ReadString('\n')
         if err != nil {
             log.Printf("CLOSED[%s]\n", connectionId);
+            ticker.Stop()
+            done <- true
             return
         }
 
