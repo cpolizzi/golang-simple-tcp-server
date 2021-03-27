@@ -2,7 +2,8 @@ package main
 
 import (
 	"bufio"
-	"fmt"
+    "fmt"
+    "log"
 	"net"
 	"os"
 	"strings"
@@ -43,19 +44,19 @@ func handleRequest(req string) string {
 
 func handleConnection(c net.Conn) {
     connectionId := c.RemoteAddr().String()
-    fmt.Printf("ACCEPT[%s]\n", connectionId)
+    log.Printf("ACCEPT[%s]\n", connectionId)
 	for {
         netData, err := bufio.NewReader(c).ReadString('\n')
         if err != nil {
-            fmt.Printf("CLOSED[%s]\n", connectionId);
+            log.Printf("CLOSED[%s]\n", connectionId);
             return
         }
 
         request := strings.TrimSpace(string(netData))
-        fmt.Printf("RECV[%s]: length=%d, request=%s\n", connectionId, len(request), request)
+        log.Printf("RECV[%s]: length=%d, request=%s\n", connectionId, len(request), request)
         response := handleRequest(request)
         response = fmt.Sprintf("%s\n", response)
-        fmt.Printf("SEND[%s]: length=%d, response=%s", connectionId, len(response), response)
+        log.Printf("SEND[%s]: length=%d, response=%s", connectionId, len(response), response)
 
         c.Write([]byte(string(response)))
     }
@@ -72,7 +73,7 @@ func main() {
     PORT := ":" + arguments[1]
     l, err := net.Listen("tcp4", PORT)
     if err != nil {
-        fmt.Println(err)
+        log.Println(err)
         return
     }
     defer l.Close()
@@ -80,7 +81,7 @@ func main() {
     for {
         c, err := l.Accept()
         if err != nil {
-            fmt.Println(err)
+            log.Println(err)
             return
         }
         go handleConnection(c)
