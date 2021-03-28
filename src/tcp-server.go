@@ -10,6 +10,8 @@ import (
 	"time"
 )
 
+// Create a request based on the type
+// TODO: Make pluggable
 func createRequest(mti string) string {
 	request := ""
 
@@ -21,6 +23,7 @@ func createRequest(mti string) string {
 	return request
 }
 
+// Send request to client
 func sendRequest(c net.Conn, mti string) {
 	connectionId := c.RemoteAddr().String()
 
@@ -31,10 +34,14 @@ func sendRequest(c net.Conn, mti string) {
 	c.Write([]byte(string(request)))
 }
 
+// Handle an MTI 820 by providing the response
+// TODO: Make pluggable
 func handleMTI820(payload string) string {
 	return "0830:OK"
 }
 
+// Process a client request and prepare response
+// TODO: Genericize known requests and dispatch for handling in a pluggable manner
 func processRequest(mti string, payload string) string {
 	response := "TODO"
 	switch mti {
@@ -47,6 +54,7 @@ func processRequest(mti string, payload string) string {
 	return response
 }
 
+// Decode the client request and encode response
 func handleRequest(req string) string {
 	response := ""
 
@@ -64,10 +72,12 @@ func handleRequest(req string) string {
 	return response
 }
 
+// Handle a new connection
 func handleConnection(c net.Conn) {
 	connectionId := c.RemoteAddr().String()
 	log.Printf("ACCEPT[%s]\n", connectionId)
 
+	// Prepare and start a timer to send requests to the client
 	ticker := time.NewTicker(5000 * time.Millisecond)
 	done := make(chan bool)
 	go func() {
@@ -76,11 +86,13 @@ func handleConnection(c net.Conn) {
 			case <-done:
 				return
 			case <-ticker.C:
+				// TODO Make request type pluggable
 				sendRequest(c, "0120")
 			}
 		}
 	}()
 
+	// Read request from client
 	for {
 		netData, err := bufio.NewReader(c).ReadString('\n')
 		if err != nil {
@@ -90,6 +102,7 @@ func handleConnection(c net.Conn) {
 			break
 		}
 
+		// Process client request and send response
 		request := strings.TrimSpace(string(netData))
 		log.Printf("RECV[%s]: length=%d, request=%s\n", connectionId, len(request), request)
 		response := handleRequest(request)
@@ -101,6 +114,7 @@ func handleConnection(c net.Conn) {
 	c.Close()
 }
 
+// Entry
 func main() {
 	arguments := os.Args
 	if len(arguments) == 1 {
@@ -108,6 +122,7 @@ func main() {
 		return
 	}
 
+	// Listenfor  connections on the designated port on all interfaces
 	PORT := ":" + arguments[1]
 	l, err := net.Listen("tcp4", PORT)
 	if err != nil {
@@ -116,6 +131,7 @@ func main() {
 	}
 	defer l.Close()
 
+	// Indefinitely wait for connections and dispatch on a separate thread
 	for {
 		c, err := l.Accept()
 		if err != nil {
